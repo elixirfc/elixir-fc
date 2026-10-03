@@ -1,0 +1,1235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Elixir FC</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --deep:#241848;
+  --violet:#43307F;
+  --amber:#F2B04A;
+  --bg:#F5F3FB;
+  --card:#FFFFFF;
+  --line:#DDD7EE;
+  --text:#1F1838;
+  --muted:#6B6585;
+  --here:#1F8A70;
+  --late:#C98A1B;
+  --out:#C0443C;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text)}
+body{font-family:"Gill Sans","Gill Sans MT",Calibri,"Trebuchet MS",system-ui,sans-serif;font-size:16px;line-height:1.35;-webkit-text-size-adjust:100%}
+.wrap{max-width:560px;margin:0 auto;padding:16px 16px 100px}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+header{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px}
+h1{margin:0;font-size:24px;font-weight:800;letter-spacing:.2px;color:var(--deep)}
+.sub{color:var(--muted);font-size:14px}
+h2{margin:0 0 8px;font-size:17px;font-weight:700}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.banner{background:#FFF3D6;border:1px solid #EBCB85;border-radius:10px;padding:8px 12px;margin-bottom:12px;font-size:14px}
+
+/* buttons */
+.btn{border:1px solid var(--line);background:#fff;border-radius:10px;min-height:44px;padding:0 14px;font-weight:600}
+.btn.primary{background:var(--violet);border-color:var(--violet);color:#fff}
+.btn.danger{color:var(--out);border-color:#E8C2BF}
+.btn.armed{background:var(--out);border-color:var(--out);color:#fff}
+.btn.small{min-height:36px;padding:0 10px;font-size:14px}
+.row{display:flex;gap:8px;align-items:center}
+.row.wrap-r{flex-wrap:wrap}
+.grow{flex:1}
+
+/* inputs */
+input[type=text],input[type=date],input[type=number],input[type=email],input[type=password],textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff;min-height:44px}
+textarea{min-height:84px;resize:vertical}
+label{display:block;font-size:13px;color:var(--muted);margin-bottom:4px}
+
+/* timer */
+.timer{background:var(--deep);color:#fff;border-radius:18px;padding:18px 16px 16px;margin-bottom:12px}
+.timer .blockname{font-size:17px;font-weight:700;opacity:.95}
+.timer .clock{font-size:68px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.05;margin:2px 0 4px;letter-spacing:-1px}
+.timer .left{font-size:14px;opacity:.75;margin-bottom:12px}
+.segs{display:flex;gap:3px;height:10px;margin-bottom:14px}
+.seg{background:rgba(255,255,255,.18);border-radius:3px;overflow:hidden;position:relative}
+.seg i{position:absolute;inset:0 auto 0 0;width:0;background:var(--amber)}
+.tctl{display:grid;grid-template-columns:1fr auto auto auto;gap:8px}
+.tbtn{min-height:48px;border-radius:12px;border:1px solid rgba(255,255,255,.3);background:transparent;color:#fff;font-weight:700;padding:0 14px}
+.tbtn.go{background:var(--amber);border-color:var(--amber);color:var(--deep);font-size:18px}
+.tbtn:disabled{opacity:.4}
+.timer.done .clock{color:var(--amber)}
+
+/* blocks */
+.blk{display:grid;grid-template-columns:22px 1fr 64px 36px;gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--line)}
+.blk:first-child{border-top:0}
+.blk .mark{width:10px;height:10px;border-radius:50%;background:var(--line);justify-self:center}
+.blk.now .mark{background:var(--amber);box-shadow:0 0 0 3px #F2B04A44}
+.blk.past .mark{background:var(--violet)}
+.blk input{min-height:38px;padding:6px 8px}
+.blk .x{border:0;background:transparent;color:var(--muted);font-size:20px;min-height:36px}
+
+/* attendance */
+.counts{display:flex;gap:14px;flex-wrap:wrap;margin:2px 0 10px;font-size:14px}
+.counts b{font-size:18px}
+.c-here b{color:var(--here)} .c-late b{color:var(--late)} .c-out b{color:var(--out)} .c-none b{color:var(--muted)}
+.att{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--line)}
+.att:first-of-type{border-top:0}
+.att .who{flex:1;min-width:0}
+.att .who b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.seg3{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg3 button{border:0;background:#fff;min-height:44px;min-width:58px;padding:0 6px;font-size:13px;font-weight:600;border-left:1px solid var(--line)}
+.seg3 button:first-child{border-left:0}
+.seg3 button.on.P{background:var(--here);color:#fff}
+.seg3 button.on.L{background:var(--late);color:#fff}
+.seg3 button.on.A{background:var(--out);color:#fff}
+.grp{font-size:13px;color:var(--muted);margin:10px 0 0;padding-top:8px;border-top:1px solid var(--line)}
+
+/* squad + log */
+.pl{display:flex;align-items:center;gap:8px;padding:9px 0;border-top:1px solid var(--line)}
+.pl:first-child{border-top:0}
+.rate{font-variant-numeric:tabular-nums;text-align:right;min-width:92px}
+.bar{height:5px;background:var(--line);border-radius:3px;margin-top:4px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--here)}
+.sess-h{display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:none;border:0;padding:0;min-height:44px}
+.pill{display:inline-block;border-radius:999px;padding:1px 9px;font-size:13px;font-weight:600;margin-right:4px}
+.pill.P{background:#DDF1EA;color:var(--here)} .pill.L{background:#FBEBCB;color:#8A5E0A} .pill.A{background:#F6DAD7;color:var(--out)}
+.names{margin:6px 0;font-size:14px}
+.empty{text-align:center;padding:22px 10px;color:var(--muted)}
+.empty b{display:block;color:var(--text);margin-bottom:4px;font-size:17px}
+
+/* profile + ratings */
+select{border:1px solid var(--line);border-radius:8px;background:#fff;min-height:36px;padding:0 6px}
+.rt{display:flex;gap:6px;align-items:center;font-size:13px;margin:4px 0 0;color:var(--muted)}
+.tog{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.tog .btn.on{background:var(--violet);border-color:var(--violet);color:#fff}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.three{display:grid;grid-template-columns:1fr 36px 1fr;gap:8px;align-items:end}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.chip{border-radius:10px;padding:5px 10px;font-weight:700;min-width:44px;text-align:center;background:#EEE;font-size:15px}
+.chip small{display:block;font-weight:600;font-size:11px;opacity:.8}
+.chip.hi,.chip.P{background:#DDF1EA;color:var(--here)}
+.chip.mid,.chip.L{background:#FBEBCB;color:#8A5E0A}
+.chip.lo,.chip.A{background:#F6DAD7;color:var(--out)}
+.big{font-size:30px;font-weight:800;line-height:1.1}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
+.plbtn{background:none;border:0;text-align:left;padding:0;min-height:44px;flex:1;min-width:0}
+.back{border:0;background:none;color:var(--violet);font-weight:700;min-height:44px;padding:0}
+/* home */
+.hero{background:var(--deep);color:#fff;border-radius:18px;padding:18px 16px 16px;margin-bottom:12px}
+.hero .hello{font-size:32px;font-weight:800;letter-spacing:-.5px;line-height:1.05}
+.hero .hdate{opacity:.7;font-size:14px;margin:4px 0 14px}
+.hero .hnow{font-size:15px;font-weight:700}
+.hero .hclock{font-size:56px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.05;margin:2px 0}
+.hero .hleft{font-size:14px;opacity:.75;margin-bottom:12px}
+.hero .two{gap:8px}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{background:var(--bg);border-radius:12px;padding:10px 12px}
+.tile .big{font-size:28px}
+.nudge{background:#FFF3D6;border:1px solid #EBCB85;border-radius:14px;padding:12px 14px;margin-bottom:12px}
+.hrow{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line);width:100%;background:none;border-left:0;border-right:0;border-bottom:0;text-align:left;min-height:52px}
+.hrow:first-of-type{border-top:0}
+/* avatars */
+.av{border-radius:50%;object-fit:cover;background:var(--violet);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;flex:none}
+.filebtn{position:relative;display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 16px;border:1px solid var(--line);border-radius:10px;background:#fff;font-weight:600;font-size:14px;overflow:hidden}
+.filebtn input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:100px}
+.filebtn:focus-within{outline:3px solid var(--amber);outline-offset:2px}
+/* cloud */
+.login{max-width:420px;margin:0 auto;padding-top:6vh}
+.login .brand{font-size:36px;font-weight:800;color:var(--deep);letter-spacing:-.5px;line-height:1}
+.login .tag{color:var(--muted);margin:6px 0 20px}
+.codebox{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:26px;font-weight:700;letter-spacing:2px;background:var(--bg);border:1px dashed var(--violet);border-radius:12px;padding:12px;text-align:center;margin:8px 0 10px;user-select:all}
+.badge{text-align:right;margin:-6px 0 8px;font-size:12px;color:var(--muted)}
+/* nav */
+nav{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+nav .in{max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr)}
+nav button{border:0;background:none;min-height:58px;font-weight:700;color:var(--muted);position:relative}
+nav button.on{color:var(--violet)}
+nav button.on::before{content:"";position:absolute;top:0;left:25%;right:25%;height:3px;background:var(--violet);border-radius:0 0 3px 3px}
+.toast{position:fixed;left:50%;bottom:76px;transform:translateX(-50%);background:var(--deep);color:#fff;padding:9px 16px;border-radius:999px;font-size:14px;z-index:5}
+@media (prefers-reduced-motion:no-preference){.seg i{transition:width .25s linear}}
+@media (max-width:370px){.timer .clock{font-size:58px}.seg3 button{min-width:50px}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script>
+/* ====== SET THESE TWO FROM YOUR SUPABASE PROJECT (Project Settings > API) ====== */
+const SUPABASE_URL = 'https://anjgjzyhjxvujcgwhvau.supabase.co';
+const SUPABASE_KEY = 'sb_publishable__VKWkTLk68k62QKaXMFzRQ_0jjjO6bm';
+/* ================================================================================ */
+let KEY = 'elixir-fc-cloud-v1';
+const PCODE_KEY = 'elixir-fc-player-code';
+const sb = (window.supabase && window.supabase.createClient) ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+let mode = 'loading', user = null, pdata = null, tickStarted = false;
+let clubId = null, cloudExists = false, lastSeen = null;
+let knownIds = new Set();
+const isHead = () => !!user && clubId === user.id;
+const noteKnown = list => (list || []).forEach(s => knownIds.add(s.id));
+const DEFAULT_BLOCKS = [
+  {name:'Warm-up and possession', min:15},
+  {name:'Transition drills', min:15},
+  {name:'Build-up vs press', min:15},
+  {name:'Small-sided games', min:25},
+  {name:'Shooting drills', min:15},
+  {name:'Briefing', min:5}
+];
+const DEFAULT_MATCH_BLOCKS = [{name:'First half', min:30},{name:'Second half', min:30}];
+const uid = () => Math.random().toString(36).slice(2, 9);
+const clone = o => JSON.parse(JSON.stringify(o));
+
+let S = {
+  players: [],
+  sessions: [],
+  currentId: null,
+  blocks: clone(DEFAULT_BLOCKS),
+  matchBlocks: clone(DEFAULT_MATCH_BLOCKS),
+  timer: null
+};
+let ui = {tab:'home', open:{}, armed:null, toast:'', storageOk:true, newName:'', newNote:'', newStaff:false, draftTitle:'Training', draftDate:todayStr(), draftType:'training', draftOpp:'', profile:null, restoreText:'', email:'', password:'', code:'', sync:'saved', busy:false};
+
+function todayStr(){
+  const d = new Date();
+  const p = n => String(n).padStart(2,'0');
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());
+}
+function fmtDate(str){
+  const [y,m,d] = str.split('-').map(Number);
+  return new Date(y, m-1, d).toLocaleDateString('en-GB',{weekday:'short', day:'numeric', month:'short', year:'numeric'});
+}
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+const cur = () => S.sessions.find(s => s.id === S.currentId) || null;
+
+/* ---------- storage ---------- */
+let saveTimer = null;
+async function kvSet(str){
+  let ok = false;
+  try{ if(window.storage){ await window.storage.set(KEY, str, false); ok = true; } }catch(e){}
+  try{ localStorage.setItem(KEY, str); ok = true; }catch(e){}
+  return ok;
+}
+async function kvGet(){
+  try{ if(window.storage){ const r = await window.storage.get(KEY, false); if(r && r.value) return r.value; } }catch(e){}
+  try{ const v = localStorage.getItem(KEY); if(v) return v; }catch(e){}
+  return null;
+}
+function save(){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    const ok = await kvSet(JSON.stringify(S));
+    if(ok !== ui.storageOk){ ui.storageOk = ok; render(); }
+  }, 250);
+  cloudSave();
+}
+let cloudTimer = null;
+function syncText(){ return {saved:'Cloud: saved', saving:'Cloud: saving...', error:'Cloud: could not save, will retry', offline:'Offline: showing the copy on this phone'}[ui.sync] || ''; }
+function paintSync(){ const el = document.getElementById('syncbadge'); if(el) el.textContent = syncText(); }
+const sameTime = (a, b) => !!a && !!b && Date.parse(a) === Date.parse(b);
+function normalizeS(){
+  if(!S.matchBlocks) S.matchBlocks = clone(DEFAULT_MATCH_BLOCKS);
+  if(!S.blocks) S.blocks = clone(DEFAULT_BLOCKS);
+  if(S.currentId && !cur()){ S.currentId = null; S.timer = null; }
+  if(cur() && !S.timer) initTimer();
+  catchUp();
+}
+/* Combine my copy with another coach's newer copy so nobody's new work is lost. */
+function mergeClub(L, R){
+  const out = clone(L);
+  if(isHead()){
+    const have = new Set(out.players.map(p => p.id));
+    (R.players || []).forEach(rp => { if(!have.has(rp.id)) out.players.push(clone(rp)); });
+  }else{
+    out.players = clone(R.players || []);   // an assistant can never change the squad
+  }
+  // a session the other coach deleted should not come back from an old copy
+  const remoteIds = new Set((R.sessions || []).map(s => s.id));
+  out.sessions = out.sessions.filter(s => remoteIds.has(s.id) || !knownIds.has(s.id));
+  const byId = new Map(out.sessions.map(s => [s.id, s]));
+  (R.sessions || []).forEach(rs => {
+    const s = byId.get(rs.id);
+    if(!s){ out.sessions.push(clone(rs)); return; }
+    s.marks = Object.assign({}, rs.marks || {}, s.marks || {});
+    s.ratings = Object.assign({}, rs.ratings || {}, s.ratings || {});
+    s.names = Object.assign({}, rs.names || {}, s.names || {});
+    if(!s.notes && rs.notes) s.notes = rs.notes;
+  });
+  return out;
+}
+function cloudSave(){
+  if(mode !== 'coach' || !user || !sb) return;
+  ui.sync = 'saving'; paintSync();
+  clearTimeout(cloudTimer);
+  cloudTimer = setTimeout(doCloudSave, 1000);
+}
+async function doCloudSave(){
+  cloudTimer = null;
+  let merged = false;
+  try{
+    if(cloudExists){
+      const r0 = await sb.from('club_data').select('data,updated_at').eq('owner_id', clubId).maybeSingle();
+      if(r0.error) throw r0.error;
+      const row = r0.data;
+      if(row && row.data && row.data.players){
+        if(!sameTime(row.updated_at, lastSeen)){
+          S = mergeClub(S, row.data); merged = true;
+          kvSet(JSON.stringify(S));
+        }else if(!isHead()){
+          S.players = clone(row.data.players);
+        }
+        noteKnown(row.data.sessions);
+      }
+    }
+    const ts = new Date().toISOString();
+    let err = null;
+    if(cloudExists){
+      const r = await sb.from('club_data').update({data: S, updated_at: ts}).eq('owner_id', clubId).select('owner_id');
+      err = r.error || ((r.data && r.data.length) ? null : new Error('no access'));
+    }else{
+      const r = await sb.from('club_data').insert({owner_id: clubId, data: S, updated_at: ts});
+      err = r.error; if(!err) cloudExists = true;
+    }
+    if(err) throw err;
+    lastSeen = ts; ui.sync = 'saved'; noteKnown(S.sessions);
+    if(merged) render();
+  }catch(e){
+    ui.sync = 'error';
+    if(!cloudTimer) cloudTimer = setTimeout(doCloudSave, 8000);
+  }
+  paintSync();
+}
+/* Check every few seconds whether the other coach saved something new. */
+async function pollCloud(){
+  if(mode !== 'coach' || !user || !sb || !cloudExists || cloudTimer || ui.sync === 'saving' || ui.sync === 'error') return;
+  const a = document.activeElement;
+  if(a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return;
+  try{
+    const { data, error } = await sb.from('club_data').select('data,updated_at').eq('owner_id', clubId).maybeSingle();
+    if(error || !data || !data.data || !data.data.players) return;
+    if(!sameTime(data.updated_at, lastSeen) && !cloudTimer){
+      S = data.data; lastSeen = data.updated_at; noteKnown(S.sessions);
+      normalizeS(); kvSet(JSON.stringify(S)); render();
+    }
+  }catch(e){}
+}
+async function load(){
+  try{
+    const v = await kvGet();
+    if(v){
+      const d = JSON.parse(v);
+      if(d && d.players && d.sessions){ S = d; if(!S.matchBlocks) S.matchBlocks = clone(DEFAULT_MATCH_BLOCKS); }
+    }
+  }catch(e){ /* first run or nothing saved yet */ }
+}
+
+/* ---------- timer ---------- */
+const blocksOf = () => { const s = cur(); return s ? s.blocks : []; };
+function initTimer(){
+  const b = blocksOf();
+  S.timer = {idx:0, remaining:(b[0] ? b[0].min : 0)*60000, running:false, endAt:0, done:false};
+}
+function catchUp(){
+  const t = S.timer; if(!t || !t.running) return;
+  const b = blocksOf();
+  while(t.running && t.endAt <= Date.now()){
+    if(t.idx < b.length-1){
+      t.idx++;
+      t.endAt += b[t.idx].min*60000;
+    }else{
+      t.running = false; t.done = true; t.remaining = 0;
+    }
+  }
+  if(t.running) t.remaining = t.endAt - Date.now();
+}
+let audioCtx = null, wakeLock = null;
+function prepAudio(){
+  try{
+    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+  }catch(e){}
+}
+function beep(times){
+  try{
+    if(navigator.vibrate) navigator.vibrate([250,120,250]);
+    if(!audioCtx) return;
+    for(let i=0;i<times;i++){
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.frequency.value = 880; o.connect(g); g.connect(audioCtx.destination);
+      const t0 = audioCtx.currentTime + i*0.35;
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(0.4, t0+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0+0.25);
+      o.start(t0); o.stop(t0+0.28);
+    }
+  }catch(e){}
+}
+async function holdScreen(on){
+  try{
+    if(on && navigator.wakeLock && !wakeLock){ wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); }
+    if(!on && wakeLock){ await wakeLock.release(); wakeLock = null; }
+  }catch(e){}
+}
+function tStart(){
+  const t = S.timer; if(!t || t.done) return;
+  prepAudio();
+  t.running = true; t.endAt = Date.now() + t.remaining;
+  holdScreen(true); save(); render();
+}
+function tPause(){
+  const t = S.timer; if(!t) return;
+  t.remaining = Math.max(0, t.endAt - Date.now());
+  t.running = false; holdScreen(false); save(); render();
+}
+function tGo(i){
+  const t = S.timer, b = blocksOf();
+  if(!t || i < 0 || i >= b.length) return;
+  const was = t.running;
+  t.idx = i; t.done = false; t.remaining = b[i].min*60000;
+  t.endAt = Date.now() + t.remaining; t.running = was;
+  save(); render();
+}
+function tReset(){
+  const t = S.timer, b = blocksOf(); if(!t) return;
+  t.done = false; t.remaining = b[t.idx].min*60000; t.endAt = Date.now() + t.remaining;
+  save(); render();
+}
+function tick(){
+  const t = S.timer; if(!t || !t.running) return;
+  const idxBefore = t.idx;
+  const b = blocksOf();
+  if(t.endAt <= Date.now()){
+    catchUp();
+    if(t.done){ beep(3); holdScreen(false); toast('Session finished'); }
+    else if(t.idx !== idxBefore){ beep(2); toast('Next: ' + b[t.idx].name); }
+    save(); render(); return;
+  }
+  t.remaining = t.endAt - Date.now();
+  paintTimer();
+}
+function mmss(ms){
+  const s = Math.max(0, Math.ceil(ms/1000));
+  return String(Math.floor(s/60)).padStart(2,'0') + ':' + String(s%60).padStart(2,'0');
+}
+function paintTimer(){
+  const t = S.timer, b = blocksOf(); if(!t || !b.length) return;
+  const clock = document.getElementById('clock');
+  if(clock) clock.textContent = mmss(t.remaining);
+  const left = document.getElementById('left');
+  if(left){
+    let rest = t.remaining;
+    for(let i=t.idx+1;i<b.length;i++) rest += b[i].min*60000;
+    left.textContent = t.done ? 'All blocks complete' : mmss(rest) + ' left in the session';
+  }
+  document.querySelectorAll('.seg i').forEach((el, i) => {
+    const total = b[i].min*60000;
+    let p = 0;
+    if(i < t.idx || t.done) p = 100;
+    else if(i === t.idx) p = Math.max(0, Math.min(100, (1 - t.remaining/total)*100));
+    el.style.width = p + '%';
+  });
+}
+
+/* ---------- attendance helpers ---------- */
+function counts(s, staff){
+  const ids = Object.keys(s.marks);
+  const roster = S.players.filter(p => p.staff === staff);
+  const c = {P:0, L:0, A:0, none:0};
+  roster.forEach(p => { const m = s.marks[p.id]; if(m) c[m]++; else c.none++; });
+  return c;
+}
+function nameOf(s, id){
+  const p = S.players.find(x => x.id === id);
+  return p ? p.name : (s.names && s.names[id]) || 'Unknown';
+}
+function listBy(s, val, staff){
+  return Object.keys(s.marks).filter(id => s.marks[id] === val && isStaff(id, s) === staff).map(id => nameOf(s, id));
+}
+function isStaff(id, s){
+  const p = S.players.find(x => x.id === id);
+  if(p) return p.staff;
+  return !!(s.staffIds && s.staffIds.includes(id));
+}
+function sessLabel(s){ return s.type === 'match' ? 'Match vs ' + (s.opp || 'opponent') : (s.title || 'Training'); }
+function scoreText(s){ return (s.type === 'match' && s.gf !== '' && s.ga !== '' && s.gf != null && s.ga != null) ? s.gf + '-' + s.ga : ''; }
+function summaryText(s){
+  const head = s.type === 'match'
+    ? 'Elixir FC match: ' + (scoreText(s) ? 'Elixir FC ' + scoreText(s) + ' ' + (s.opp || 'opponent') : 'vs ' + (s.opp || 'opponent')) + ', ' + fmtDate(s.date)
+    : 'Elixir FC training: ' + fmtDate(s.date) + (s.title ? ' (' + s.title + ')' : '');
+  const lines = [head];
+  const pl = v => listBy(s, v, false);
+  const P = pl('P'), L = pl('L'), A = pl('A');
+  lines.push('Present (' + P.length + '): ' + (P.join(', ') || 'none'));
+  lines.push('Late (' + L.length + '): ' + (L.join(', ') || 'none'));
+  lines.push('Absent (' + A.length + '): ' + (A.join(', ') || 'none'));
+  const sp = listBy(s,'P',true).concat(listBy(s,'L',true));
+  if(sp.length) lines.push('Staff: ' + sp.join(', '));
+  if(s.notes && s.notes.trim()) lines.push('Notes: ' + s.notes.trim());
+  return lines.join('\n');
+}
+function playerRate(p){
+  let total = 0, att = 0;
+  S.sessions.forEach(s => { if(s.type === 'match') return; const m = s.marks[p.id]; if(m){ total++; if(m === 'P') att += 1; else if(m === 'L') att += 0.5; } });
+  return {total, att, pct: total ? Math.round(att/total*100) : null};
+}
+
+/* ---------- actions ---------- */
+function toast(msg){
+  ui.toast = msg; render();
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => { ui.toast = ''; render(); }, Math.max(2200, msg.length * 70));
+}
+function arm(key){
+  if(ui.armed === key) return true;
+  ui.armed = key; render();
+  clearTimeout(arm._t);
+  arm._t = setTimeout(() => { ui.armed = null; render(); }, 3000);
+  return false;
+}
+async function copyText(text){
+  try{ await navigator.clipboard.writeText(text); toast('Copied'); return; }catch(e){}
+  const ta = document.createElement('textarea');
+  ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select();
+  let ok = false;
+  try{ ok = document.execCommand('copy'); }catch(e){}
+  document.body.removeChild(ta);
+  if(ok) toast('Copied');
+  else { ui.fallbackText = text; render(); }
+}
+function startSession(){
+  const type = ui.draftType === 'match' ? 'match' : 'training';
+  const s = {id:uid(), type, date:ui.draftDate || todayStr(),
+    title: type === 'match' ? 'Match' : (ui.draftTitle || 'Training').trim(),
+    opp: type === 'match' ? (ui.draftOpp || '').trim() : '', gf:'', ga:'',
+    notes:'', marks:{}, ratings:{}, names:{}, staffIds:[],
+    blocks: clone(type === 'match' ? S.matchBlocks : S.blocks)};
+  S.sessions.push(s); S.currentId = s.id; initTimer(); save(); render();
+}
+function endSession(){
+  if(S.timer && S.timer.running) holdScreen(false);
+  S.currentId = null; S.timer = null; ui.draftTitle = 'Training'; ui.draftDate = todayStr(); ui.draftType = 'training'; ui.draftOpp = '';
+  save(); render(); toast('Session saved to Log');
+}
+function mark(pid, val){
+  const s = cur(); if(!s) return;
+  const p = S.players.find(x => x.id === pid); if(!p) return;
+  if(s.marks[pid] === val) delete s.marks[pid]; else s.marks[pid] = val;
+  s.names[pid] = p.name;
+  if(p.staff && !s.staffIds.includes(pid)) s.staffIds.push(pid);
+  save(); render();
+}
+function allPresent(){
+  const s = cur(); if(!s) return;
+  S.players.filter(p => !p.staff).forEach(p => { if(!s.marks[p.id]){ s.marks[p.id] = 'P'; s.names[p.id] = p.name; } });
+  save(); render();
+}
+function syncBlocks(){ const s = cur(); if(s){ if(s.type === 'match') S.matchBlocks = clone(s.blocks); else S.blocks = clone(s.blocks); } save(); }
+
+const ADMIN_ACTS = new Set(['addplayer','delplayer','gencode','newcode','copycode','invite','backup','restore','resetall','delsession','rmphoto']);
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]'); if(!el) return;
+  const a = el.dataset.act, id = el.dataset.id, v = el.dataset.v;
+  if(ADMIN_ACTS.has(a) && !isHead()){ toast('Only the head coach can do that'); return; }
+  switch(a){
+    case 'tab': ui.tab = v; ui.profile = null; ui.armed = null; render(); window.scrollTo(0,0); break;
+    case 'start': startSession(); break;
+    case 'draftType': ui.draftType = v; render(); break;
+    case 'profile': ui.tab = 'squad'; ui.profile = id; render(); window.scrollTo(0,0); break;
+    case 'rmphoto': { const pl = S.players.find(x => x.id === id); if(pl){ delete pl.photo; save(); render(); } break; }
+    case 'backprofile': ui.profile = null; render(); break;
+    case 'end': endSession(); break;
+    case 'mark': mark(id, v); break;
+    case 'allpresent': allPresent(); break;
+    case 'tgo': S.timer && S.timer.running ? tPause() : tStart(); break;
+    case 'tnext': tGo(S.timer.idx + 1); break;
+    case 'tprev': tGo(S.timer.idx - 1); break;
+    case 'treset': tReset(); break;
+    case 'jump': tGo(Number(v)); break;
+    case 'blkadd': { const s = cur(); s.blocks.push({name:'New block', min:10}); syncBlocks(); render(); break; }
+    case 'blkdel': {
+      const s = cur(); if(s.blocks.length <= 1) break;
+      const i = Number(v); s.blocks.splice(i,1);
+      if(S.timer.idx >= s.blocks.length) S.timer.idx = s.blocks.length-1;
+      if(!S.timer.running) S.timer.remaining = s.blocks[S.timer.idx].min*60000;
+      syncBlocks(); render(); break;
+    }
+    case 'addplayer': {
+      const name = ui.newName.trim(); if(!name) { toast('Type a name first'); break; }
+      S.players.push({id:uid(), name, note:ui.newNote.trim(), staff:ui.newStaff});
+      ui.newName = ''; ui.newNote = ''; ui.newStaff = false; save(); render(); break;
+    }
+    case 'delplayer':
+      if(arm('dp'+id)){ S.players = S.players.filter(p => p.id !== id); if(ui.profile === id) ui.profile = null; ui.armed = null; save(); render(); }
+      break;
+    case 'togglelog': ui.open[id] = !ui.open[id]; render(); break;
+    case 'copy': { const s = S.sessions.find(x => x.id === id); if(s) copyText(summaryText(s)); break; }
+    case 'copycur': { const s = cur(); if(s) copyText(summaryText(s)); break; }
+    case 'delsession':
+      if(arm('ds'+id)){
+        S.sessions = S.sessions.filter(s => s.id !== id);
+        if(S.currentId === id){ S.currentId = null; S.timer = null; }
+        ui.armed = null; save(); render();
+      }
+      break;
+    case 'coachSignIn': coachSignIn(); break;
+    case 'playerEnter': playerEnter(); break;
+    case 'signout': signOut(); break;
+    case 'plogout': playerLogout(); break;
+    case 'refreshPlayer': enterPlayer(localStorage.getItem(PCODE_KEY), false); break;
+    case 'gencode': { const pl = S.players.find(x => x.id === id); if(pl){ pl.code = newCode(); save(); render(); } break; }
+    case 'newcode': if(arm('nc'+id)){ const pl = S.players.find(x => x.id === id); if(pl){ pl.code = newCode(); ui.armed = null; save(); render(); toast('New code created. The old one stopped working.'); } } break;
+    case 'copycode': { const pl = S.players.find(x => x.id === id); if(pl && pl.code) copyText(pl.code); break; }
+    case 'invite': { const pl = S.players.find(x => x.id === id); if(pl && pl.code) copyText('Hi ' + pl.name + ', this is your Elixir FC page: ' + location.origin + location.pathname + '\nYour code: ' + fmtCode(pl.code) + '\nOpen the page, type the code and you will see your attendance, scores and profile.'); break; }
+    case 'backup': S.lastBackup = Date.now(); save(); copyText(JSON.stringify(S)); break;
+    case 'quick': ui.draftType = v; ui.tab = 'train'; render(); window.scrollTo(0,0); break;
+    case 'openlog': ui.open[id] = true; ui.tab = 'log'; render(); window.scrollTo(0,0); break;
+    case 'resetall':
+      if(arm('reset')){
+        if(S.timer && S.timer.running) holdScreen(false);
+        S = {players:[], sessions:[], currentId:null, blocks:clone(DEFAULT_BLOCKS), matchBlocks:clone(DEFAULT_MATCH_BLOCKS), timer:null};
+        ui.profile = null; ui.armed = null; ui.open = {}; ui.restoreText = ''; ui.tab = 'home';
+        save(); render(); toast('Everything deleted');
+      }
+      break;
+    case 'restore': {
+      try{
+        const d = JSON.parse((ui.restoreText || '').trim());
+        if(!d || !Array.isArray(d.players) || !Array.isArray(d.sessions)) throw new Error('bad');
+        if(!arm('restore')) break;
+        S = d; if(S.currentId && !cur()){ S.currentId = null; S.timer = null; }
+        if(cur() && !S.timer) initTimer();
+        ui.restoreText = ''; ui.armed = null; save(); render(); toast('Backup restored');
+      }catch(err){ toast('That is not a valid backup'); }
+      break;
+    }
+    case 'closefallback': ui.fallbackText = null; render(); break;
+  }
+});
+document.addEventListener('keydown', e => {
+  if(e.key !== 'Enter') return;
+  const k = e.target.dataset && e.target.dataset.in;
+  if(k === 'email' || k === 'password') coachSignIn();
+  else if(k === 'code') playerEnter();
+});
+document.addEventListener('input', e => {
+  const k = e.target.dataset.in; if(!k) return;
+  const val = e.target.value;
+  if(k === 'email'){ ui.email = val; return; }
+  if(k === 'password'){ ui.password = val; return; }
+  if(k === 'code'){ ui.code = val; return; }
+  if(k === 'title'){ cur().title = val; save(); }
+  else if(k === 'notes'){ cur().notes = val; save(); }
+  else if(k === 'draftTitle') ui.draftTitle = val;
+  else if(k === 'draftDate') ui.draftDate = val;
+  else if(k === 'newName') ui.newName = val;
+  else if(k === 'newNote') ui.newNote = val;
+  else if(k === 'restoreText') ui.restoreText = val;
+  else if(k === 'draftOpp') ui.draftOpp = val;
+  else if(k === 'opp'){ cur().opp = val; save(); }
+  else if(k === 'gf'){ cur().gf = val === '' ? '' : Math.max(0, Math.round(Number(val))); save(); }
+  else if(k === 'ga'){ cur().ga = val === '' ? '' : Math.max(0, Math.round(Number(val))); save(); }
+  else if(k === 'pf'){ if(!isHead()) return; const pl = S.players.find(x => x.id === e.target.dataset.id); if(pl){ pl[e.target.dataset.f] = val; save(); } }
+});
+document.addEventListener('change', e => {
+  const k = e.target.dataset.in; if(!k) return;
+  const i = Number(e.target.dataset.i);
+  if(k === 'blkName'){ cur().blocks[i].name = e.target.value || 'Block'; syncBlocks(); render(); }
+  else if(k === 'blkMin'){
+    const m = Math.max(1, Math.min(180, Math.round(Number(e.target.value) || 1)));
+    const s = cur(); s.blocks[i].min = m;
+    if(S.timer && i === S.timer.idx && !S.timer.running){ S.timer.remaining = m*60000; S.timer.done = false; }
+    syncBlocks(); render();
+  }
+  else if(k === 'photo'){ if(!isHead()){ toast('Only the head coach can do that'); return; } setPhoto(e.target.dataset.id, e.target.files && e.target.files[0]); e.target.value = ''; }
+  else if(k === 'newStaff') { ui.newStaff = e.target.checked; }
+  else if(k === 'rating'){
+    const s = cur(); if(!s) return;
+    s.ratings = s.ratings || {};
+    const id = e.target.dataset.id;
+    if(e.target.value === '') delete s.ratings[id]; else s.ratings[id] = Number(e.target.value);
+    save();
+  }
+  else if(k === 'sessDate') { cur().date = e.target.value || cur().date; save(); render(); }
+});
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'visible'){
+    pollCloud();
+    if(S.timer && S.timer.running){ catchUp(); render(); }
+    if(S.timer && S.timer.running) holdScreen(true);
+  }
+});
+
+/* ---------- views ---------- */
+function ratingSel(s, p){
+  const v = (s.ratings || {})[p.id];
+  let o = '<option value="">--</option>';
+  for(let i=1;i<=10;i++) o += `<option value="${i}" ${v===i?'selected':''}>${i}</option>`;
+  return `<label class="rt">Score <select data-in="rating" data-id="${p.id}" aria-label="Score for ${esc(p.name)}">${o}</select></label>`;
+}
+function avatar(p, size){
+  const st = `width:${size}px;height:${size}px;font-size:${Math.round(size*0.38)}px`;
+  if(p.photo) return `<img class="av" style="${st}" src="${p.photo}" alt="Photo of ${esc(p.name)}">`;
+  const ini = (p.name || '?').trim().split(/\s+/).map(w => w[0]).slice(0,2).join('').toUpperCase();
+  return `<div class="av" style="${st}" aria-hidden="true">${esc(ini)}</div>`;
+}
+function setPhoto(id, file){
+  const p = S.players.find(x => x.id === id); if(!p || !file) return;
+  toast('Reading photo...');
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  img.onload = () => {
+    try{
+      const N = 160, c = document.createElement('canvas'); c.width = N; c.height = N;
+      const side = Math.min(img.naturalWidth, img.naturalHeight);
+      const sx = (img.naturalWidth - side)/2, sy = (img.naturalHeight - side)/2;
+      c.getContext('2d').drawImage(img, sx, sy, side, side, 0, 0, N, N);
+      p.photo = c.toDataURL('image/jpeg', 0.75);
+      save(); render(); toast('Photo saved');
+    }catch(err){ toast('Could not use that photo'); }
+    URL.revokeObjectURL(url);
+  };
+  img.onerror = () => { URL.revokeObjectURL(url); toast('Could not read that photo'); };
+  img.src = url;
+}
+function subtitle(p){
+  const bits = [];
+  if(p.pos) bits.push(p.pos);
+  if(p.age) bits.push('age ' + p.age);
+  if(p.num) bits.push('#' + p.num);
+  if(p.note) bits.push(p.note);
+  return bits.join(', ');
+}
+function formList(pid){
+  const out = [];
+  S.sessions.slice().sort((a,b) => (b.date+b.id).localeCompare(a.date+a.id)).forEach(s => {
+    const r = s.ratings && s.ratings[pid];
+    if(r) out.push({r, type: s.type === 'match' ? 'Match' : 'Training', date: s.date});
+  });
+  return out;
+}
+const shortDate = d => { const [y,m,dd] = d.split('-').map(Number); return new Date(y,m-1,dd).toLocaleDateString('en-GB',{day:'numeric',month:'short'}); };
+function viewProfile(){
+  const html = viewProfileInner();
+  return isHead() ? html : html.replace(/data-in="pf"/g, 'data-in="pf" disabled');
+}
+function viewProfileInner(){
+  const p = S.players.find(x => x.id === ui.profile);
+  if(!p){ ui.profile = null; return viewSquad(); }
+  const rate = playerRate(p);
+  const fl = formList(p.id).slice(0,5);
+  const avg = fl.length ? fl.reduce((a,x) => a + x.r, 0) / fl.length : null;
+  const sorted = S.sessions.slice().sort((a,b) => (b.date+b.id).localeCompare(a.date+a.id));
+  const last5 = sorted.filter(s => s.type !== 'match' && s.marks[p.id]).slice(0,5);
+  const matches = S.sessions.filter(s => s.type === 'match' && (s.marks[p.id]==='P' || s.marks[p.id]==='L')).length;
+  const cls = r => r >= 8 ? 'hi' : r >= 5 ? 'mid' : 'lo';
+  const foot = ['', 'Right', 'Left', 'Both'].map(f => `<option value="${f}" ${(p.foot||'')===f?'selected':''}>${f || 'Not set'}</option>`).join('');
+  return `
+  <button class="back" data-act="backprofile">&larr; Back to squad</button>
+  <div class="card">
+    <div class="row" style="margin-bottom:14px;gap:14px">
+      ${avatar(p, 88)}
+      <div>
+        ${isHead() ? `<span class="filebtn">${p.photo ? 'Change photo' : 'Add photo'}<input type="file" id="photo" accept="image/*" aria-label="Choose a photo" data-in="photo" data-id="${p.id}"></span>
+        ${p.photo ? `<button class="btn small danger" data-act="rmphoto" data-id="${p.id}" style="margin-left:6px">Remove</button>` : ''}
+        <div class="small muted" style="margin-top:6px">Pick a photo from your gallery or take one.</div>` : '<div class="small muted">Only the head coach can edit player details.</div>'}
+      </div>
+    </div>
+    <label for="pn">Name</label>
+    <input type="text" id="pn" data-in="pf" data-f="name" data-id="${p.id}" value="${esc(p.name)}">
+    <div style="height:10px"></div>
+    <div class="two">
+      <div><label for="pa">Age</label><input type="number" inputmode="numeric" id="pa" data-in="pf" data-f="age" data-id="${p.id}" value="${esc(p.age||'')}"></div>
+      <div><label for="pu">Shirt number</label><input type="number" inputmode="numeric" id="pu" data-in="pf" data-f="num" data-id="${p.id}" value="${esc(p.num||'')}"></div>
+    </div>
+    <div style="height:10px"></div>
+    <div class="two">
+      <div><label for="pp">Position</label><input type="text" id="pp" data-in="pf" data-f="pos" data-id="${p.id}" value="${esc(p.pos||'')}"></div>
+      <div><label for="pf">Preferred foot</label><select id="pf" data-in="pf" data-f="foot" data-id="${p.id}" style="width:100%;min-height:44px">${foot}</select></div>
+    </div>
+    <div style="height:10px"></div>
+    <label for="pr">Team role (captain, goalkeeper...)</label>
+    <input type="text" id="pr" data-in="pf" data-f="note" data-id="${p.id}" value="${esc(p.note||'')}">
+  </div>
+
+  <div class="card">
+    <h2>Form</h2>
+    ${fl.length ? `<div class="stats" style="margin-bottom:6px">
+      <div><div class="big">${avg.toFixed(1)}</div><div class="small muted">average, last ${fl.length}</div></div>
+      <div><div class="big">${fl.length}</div><div class="small muted">scores given</div></div>
+      <div><div class="big">${matches}</div><div class="small muted">matches played</div></div>
+    </div>
+    <div class="chips">${fl.slice().reverse().map(x => `<div class="chip ${cls(x.r)}">${x.r}<small>${x.type} ${shortDate(x.date)}</small></div>`).join('')}</div>
+    <div class="small muted" style="margin-top:6px">Oldest on the left, latest on the right.</div>`
+    : `<div class="empty" style="padding:10px"><b>No scores yet</b>In a session, mark this player present or late, then pick a score from 1 to 10.</div>`}
+  </div>
+
+  <div class="card">
+    <h2>Training attendance</h2>
+    ${rate.total ? `<div class="stats" style="margin-bottom:6px">
+      <div><div class="big">${rate.pct}%</div><div class="small muted">attendance</div></div>
+      <div><div class="big">${+rate.att.toFixed(1)}/${rate.total}</div><div class="small muted">sessions</div></div>
+      <div><div class="big">${matches}</div><div class="small muted">matches played</div></div>
+    </div>
+    <div class="chips">${last5.slice().reverse().map(s => `<div class="chip ${s.marks[p.id]}">${{P:'Present',L:'Late',A:'Absent'}[s.marks[p.id]]}<small>${shortDate(s.date)}</small></div>`).join('')}</div>`
+    : `<div class="empty" style="padding:10px"><b>No training marked yet</b>Mark this player in a training session and it will show here.</div>`}
+  </div>
+
+  ${isHead() ? `<div class="card">
+    <h2>Player login code</h2>
+    ${p.code ? `<div class="codebox">${fmtCode(p.code)}</div>
+      <div class="row" style="flex-wrap:wrap">
+        <button class="btn small" data-act="invite" data-id="${p.id}">Copy invite message</button>
+        <button class="btn small" data-act="copycode" data-id="${p.id}">Copy code</button>
+        <button class="btn small danger ${ui.armed==='nc'+p.id?'armed':''}" data-act="newcode" data-id="${p.id}">${ui.armed==='nc'+p.id ? 'Tap again' : 'New code'}</button>
+      </div>
+      <div class="small muted" style="margin-top:8px">Send this only to ${esc(p.name)}. They open the page, type the code and see only their own attendance, scores and profile. They cannot change anything. Making a new code stops the old one.</div>`
+    : `<div class="small muted" style="margin-bottom:10px">Create a private code so ${esc(p.name)} can see their own attendance and scores.</div><button class="btn primary" data-act="gencode" data-id="${p.id}">Create code</button>`}
+  </div>` : ''}
+
+  <div class="card">
+    <label for="pt">Notes: strengths and what to work on</label>
+    <textarea id="pt" data-in="pf" data-f="notes" data-id="${p.id}" placeholder="What is this player good at? What should they improve?">${esc(p.notes||'')}</textarea>
+  </div>`;
+}
+function viewHome(){
+  const s = cur();
+  const players = S.players.filter(p => !p.staff);
+  const desc = S.sessions.slice().sort((a,b) => (b.date+b.id).localeCompare(a.date+a.id));
+  const trainings = S.sessions.filter(x => x.type !== 'match');
+  const matches = S.sessions.filter(x => x.type === 'match');
+  let att = 0, tot = 0, w = 0, d = 0, l = 0;
+  players.forEach(p => { const r = playerRate(p); att += r.att; tot += r.total; });
+  matches.forEach(m => { if(scoreText(m)){ if(m.gf > m.ga) w++; else if(m.gf === m.ga) d++; else l++; } });
+  const avgPct = tot ? Math.round(att/tot*100) : null;
+  const inForm = players.map(p => { const fl = formList(p.id).slice(0,5); return fl.length ? {p, avg: fl.reduce((a,x) => a + x.r, 0)/fl.length} : null; })
+    .filter(Boolean).sort((a,b) => b.avg - a.avg).slice(0,3);
+  const watch = players.map(p => ({p, r: playerRate(p)})).filter(x => x.r.total >= 2 && x.r.pct < 100).sort((a,b) => a.r.pct - b.r.pct).slice(0,3);
+  const lastMatch = desc.find(x => x.type === 'match');
+  const needBackup = isHead() && S.sessions.length && (!S.lastBackup || Date.now() - S.lastBackup > 7*86400000);
+  const today = new Date().toLocaleDateString('en-GB',{weekday:'long', day:'numeric', month:'long'});
+  const cls = r => r >= 8 ? 'hi' : r >= 5 ? 'mid' : 'lo';
+
+  let status;
+  if(s && S.timer){
+    const b = s.blocks[S.timer.idx];
+    status = `<div class="hnow">${esc(sessLabel(s))} is in progress${S.timer.done ? '' : ': ' + esc(b.name)}</div>
+      <div class="hclock" id="clock">${mmss(S.timer.remaining)}</div>
+      <div class="hleft" id="left"></div>
+      <button class="tbtn go" style="width:100%" data-act="quick" data-v="${s.type === 'match' ? 'match' : 'training'}">Open session</button>`;
+  }else if(!players.length){
+    status = isHead()
+      ? `<div class="hnow" style="margin-bottom:12px">Start by adding your squad.</div>
+      <button class="tbtn go" style="width:100%" data-act="tab" data-v="squad">Add players</button>`
+      : `<div class="hnow">The head coach has not added players yet.</div>`;
+  }else{
+    status = `<div class="hnow" style="margin-bottom:12px">What are we doing today?</div>
+      <div class="two"><button class="tbtn go" data-act="quick" data-v="training">Start training</button>
+      <button class="tbtn" data-act="quick" data-v="match">Start match</button></div>`;
+  }
+
+  const person = (p, right) => `<button class="hrow" data-act="profile" data-id="${p.id}" aria-label="Open profile of ${esc(p.name)}">${avatar(p, 36)}<span class="grow"><b>${esc(p.name)}</b></span>${right}</button>`;
+
+  return `
+  <div class="hero">
+    <div class="hello">Elixir FC</div>
+    <div class="hdate">${today}</div>
+    ${status}
+  </div>
+  ${needBackup ? `<div class="nudge"><b>Back up your data</b><div class="small" style="margin:2px 0 10px">${S.lastBackup ? 'It has been over a week since your last backup.' : 'You have not made a backup yet.'} Paste it into a WhatsApp note to yourself.</div><button class="btn small" data-act="backup">Copy backup</button></div>` : ''}
+  <div class="card">
+    <div class="tiles">
+      <div class="tile"><div class="big">${players.length}</div><div class="small muted">players</div></div>
+      <div class="tile"><div class="big">${avgPct === null ? '-' : avgPct + '%'}</div><div class="small muted">average training attendance</div></div>
+      <div class="tile"><div class="big">${trainings.length}</div><div class="small muted">training sessions</div></div>
+      <div class="tile"><div class="big">${matches.length}</div><div class="small muted">${(w+d+l) ? 'matches: ' + w + 'W ' + d + 'D ' + l + 'L' : 'matches'}</div></div>
+    </div>
+  </div>
+  ${lastMatch ? `<div class="card"><h2>Last match</h2><button class="hrow" style="border-top:0" data-act="openlog" data-id="${lastMatch.id}"><span class="grow"><b>${esc(sessLabel(lastMatch))}</b><div class="small muted">${fmtDate(lastMatch.date)}</div></span><span class="big" style="font-size:24px">${scoreText(lastMatch) || '-'}</span></button></div>` : ''}
+  ${inForm.length ? `<div class="card"><h2>In form</h2><div class="small muted" style="margin-bottom:4px">Average of the last 5 scores</div>${inForm.map(x => person(x.p, `<span class="chip ${cls(x.avg)}">${x.avg.toFixed(1)}</span>`)).join('')}</div>` : ''}
+  ${watch.length ? `<div class="card"><h2>Attendance to watch</h2><div class="small muted" style="margin-bottom:4px">Lowest training attendance</div>${watch.map(x => person(x.p, `<span class="chip ${x.r.pct >= 75 ? 'mid' : 'lo'}">${x.r.pct}%</span>`)).join('')}</div>` : ''}
+  ${desc.length ? `<div class="card"><h2>Recent sessions</h2>${desc.slice(0,3).map(x => { const c = counts(x, false); return `<button class="hrow" data-act="openlog" data-id="${x.id}"><span class="grow"><b>${esc(sessLabel(x))}</b>${scoreText(x) ? ' <b>' + esc(scoreText(x)) + '</b>' : ''}<div class="small muted">${fmtDate(x.date)}</div></span><span><span class="pill P">${c.P}</span><span class="pill L">${c.L}</span><span class="pill A">${c.A}</span></span></button>`; }).join('')}</div>` : ''}`;
+}
+function viewTrain(){
+  const s = cur();
+  if(!s){
+    return `<div class="card">
+      <h2>Start a session</h2>
+      <div class="tog" style="margin-top:8px">
+        <button class="btn ${ui.draftType!=='match'?'on':''}" data-act="draftType" data-v="training">Training</button>
+        <button class="btn ${ui.draftType==='match'?'on':''}" data-act="draftType" data-v="match">Match</button>
+      </div>
+      ${ui.draftType === 'match'
+        ? `<label for="do">Opponent</label><input type="text" id="do" data-in="draftOpp" value="${esc(ui.draftOpp)}" autocomplete="off">`
+        : `<label for="dt">Session name</label><input type="text" id="dt" data-in="draftTitle" value="${esc(ui.draftTitle)}">`}
+      <div style="height:10px"></div>
+      <label for="dd">Date</label>
+      <input type="date" id="dd" data-in="draftDate" value="${esc(ui.draftDate)}">
+      <div style="height:12px"></div>
+      <button class="btn primary" style="width:100%" data-act="start">Start ${ui.draftType==='match'?'match':'session'}</button>
+    </div>
+    ${S.sessions.length ? '' : '<div class="empty"><b>No sessions yet</b>Your first session will appear in Log once you start it.</div>'}`;
+  }
+  const t = S.timer, b = s.blocks;
+  const running = t.running;
+  const segs = b.map((x,i) => `<div class="seg" style="flex:${x.min}"><i></i></div>`).join('');
+  const blkRows = b.map((x,i) => {
+    const cls = t.done || i < t.idx ? 'past' : (i === t.idx ? 'now' : '');
+    return `<div class="blk ${cls}">
+      <button class="mark" style="border:0;padding:0;min-height:22px" aria-label="Jump to ${esc(x.name)}" data-act="jump" data-v="${i}"></button>
+      <input type="text" data-in="blkName" data-i="${i}" value="${esc(x.name)}" aria-label="Block name">
+      <input type="number" inputmode="numeric" data-in="blkMin" data-i="${i}" value="${x.min}" aria-label="Minutes">
+      <button class="x" data-act="blkdel" data-v="${i}" aria-label="Remove block">&times;</button>
+    </div>`;
+  }).join('');
+  const players = S.players.filter(p => !p.staff), staff = S.players.filter(p => p.staff);
+  const row = p => {
+    const m = s.marks[p.id];
+    return `<div class="att"><div class="who"><b>${esc(p.name)}</b>${p.note ? `<span class="small muted">${esc(p.note)}</span>` : ''}${(m==='P'||m==='L') ? ratingSel(s,p) : ''}</div>
+      <div class="seg3" role="group" aria-label="Attendance for ${esc(p.name)}">
+        <button class="${m==='P'?'on P':''}" data-act="mark" data-id="${p.id}" data-v="P">Present</button>
+        <button class="${m==='L'?'on L':''}" data-act="mark" data-id="${p.id}" data-v="L">Late</button>
+        <button class="${m==='A'?'on A':''}" data-act="mark" data-id="${p.id}" data-v="A">Absent</button>
+      </div></div>`;
+  };
+  const c = counts(s, false);
+  return `
+  <div class="card">
+    <div class="row">
+      <div class="grow">${s.type === 'match'
+        ? `<label for="so">Opponent</label><input type="text" id="so" data-in="opp" value="${esc(s.opp || '')}" autocomplete="off">`
+        : `<label for="st">Session</label><input type="text" id="st" data-in="title" value="${esc(s.title)}">`}</div>
+      <div style="width:150px"><label for="sd">Date</label><input type="date" id="sd" data-in="sessDate" value="${esc(s.date)}"></div>
+    </div>
+    ${s.type === 'match' ? `<div class="three" style="margin-top:10px">
+      <div><label for="sg">Elixir FC goals</label><input type="number" inputmode="numeric" id="sg" data-in="gf" value="${s.gf}"></div>
+      <div style="text-align:center;padding-bottom:12px">-</div>
+      <div><label for="sa">Their goals</label><input type="number" inputmode="numeric" id="sa" data-in="ga" value="${s.ga}"></div>
+    </div>` : ''}
+  </div>
+
+  <div class="timer ${t.done ? 'done' : ''}">
+    <div class="blockname">${t.done ? 'Session complete' : esc(b[t.idx].name)}</div>
+    <div class="clock" id="clock">${mmss(t.remaining)}</div>
+    <div class="left" id="left"></div>
+    <div class="segs">${segs}</div>
+    <div class="tctl">
+      <button class="tbtn go" data-act="tgo" ${t.done ? 'disabled' : ''}>${running ? 'Pause' : (t.remaining < b[t.idx].min*60000 ? 'Resume' : 'Start')}</button>
+      <button class="tbtn" data-act="tprev" aria-label="Previous block" ${t.idx === 0 ? 'disabled' : ''}>Back</button>
+      <button class="tbtn" data-act="treset" aria-label="Restart this block">Redo</button>
+      <button class="tbtn" data-act="tnext" aria-label="Next block" ${t.idx >= b.length-1 ? 'disabled' : ''}>Skip</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Register</h2>
+    <div class="counts">
+      <span class="c-here"><b>${c.P}</b> present</span>
+      <span class="c-late"><b>${c.L}</b> late</span>
+      <span class="c-out"><b>${c.A}</b> absent</span>
+      <span class="c-none"><b>${c.none}</b> unmarked</span>
+    </div>
+    ${players.length ? players.map(row).join('') : '<div class="empty"><b>No players yet</b>Add your squad in the Squad tab.</div>'}
+    ${staff.length ? `<div class="grp">Staff</div>` + staff.map(row).join('') : ''}
+    <div style="height:10px"></div>
+    <button class="btn" data-act="allpresent">Mark everyone unmarked as present</button>
+  </div>
+
+  <div class="card">
+    <h2>Session plan</h2>
+    <div class="muted small" style="margin-bottom:6px">Edit names and minutes. Changes carry over to your next session.</div>
+    ${blkRows}
+    <div style="height:8px"></div>
+    <button class="btn small" data-act="blkadd">Add block</button>
+  </div>
+
+  <div class="card">
+    <label for="nt">Session notes</label>
+    <textarea id="nt" data-in="notes" placeholder="What worked, who stood out, what to fix next time">${esc(s.notes)}</textarea>
+    <div style="height:10px"></div>
+    <div class="row wrap-r">
+      <button class="btn grow" data-act="copycur">Copy summary</button>
+      <button class="btn primary grow" data-act="end">Finish session</button>
+    </div>
+  </div>`;
+}
+
+function viewSquad(){
+  const players = S.players.filter(p => !p.staff), staff = S.players.filter(p => p.staff);
+  const row = p => {
+    const r = playerRate(p);
+    return `<div class="pl">${avatar(p, 40)}<button class="plbtn" data-act="profile" data-id="${p.id}" aria-label="Open profile of ${esc(p.name)}"><b>${esc(p.name)}</b>${subtitle(p) ? `<div class="small muted">${esc(subtitle(p))}</div>` : ''}</button>
+      <div class="rate">${r.total ? `<b>${r.pct}%</b> <span class="small muted">${+r.att.toFixed(1)}/${r.total}</span><div class="bar"><i style="width:${r.pct}%"></i></div>` : '<span class="small muted">No sessions yet</span>'}</div>
+      ${isHead() ? `<button class="btn small danger ${ui.armed==='dp'+p.id?'armed':''}" data-act="delplayer" data-id="${p.id}">${ui.armed==='dp'+p.id ? 'Confirm' : 'Remove'}</button>` : ''}</div>`;
+  };
+  return `
+  <div class="card">
+    <h2>Players <span class="muted small">${players.length}</span></h2>
+    ${players.length ? players.map(row).join('') : `<div class="empty"><b>No players yet</b>${isHead() ? 'Add your first player below.' : 'The head coach adds players.'}</div>`}
+    ${staff.length ? `<div class="grp">Staff</div>` + staff.map(row).join('') : ''}
+  </div>
+  ${isHead() ? `<div class="card">
+    <h2>Add to squad</h2>
+    <label for="nn">Name</label>
+    <input type="text" id="nn" data-in="newName" value="${esc(ui.newName)}" autocomplete="off">
+    <div style="height:10px"></div>
+    <label for="no">Role or position (optional)</label>
+    <input type="text" id="no" data-in="newNote" value="${esc(ui.newNote)}" autocomplete="off">
+    <div style="height:10px"></div>
+    <label style="display:flex;gap:8px;align-items:center;color:var(--text);font-size:15px"><input type="checkbox" data-in="newStaff" ${ui.newStaff?'checked':''} style="width:20px;height:20px"> Coaching staff, not a player</label>
+    <div style="height:12px"></div>
+    <button class="btn primary" style="width:100%" data-act="addplayer">Add</button>
+  </div>` : ''}
+  <div class="small muted" style="padding:0 4px">Tap a player to see their profile. Training attendance: present counts as 1, late counts as half (0.5) and absent counts as 0. Sessions where a player was left unmarked are ignored.</div>`;
+}
+
+function accountCard(){
+  return `<div class="card">
+    <h2>Account</h2>
+    <div class="small muted" style="margin-bottom:10px">Signed in as ${esc(user ? user.email : '')}${user && clubId && clubId !== user.id ? ' (assistant coach, sharing the head coach\'s club)' : ''}. ${syncText()}.</div>
+    <button class="btn" style="width:100%" data-act="signout">Sign out</button>
+  </div>`;
+}
+function backupCard(){
+  if(!isHead()) return accountCard();
+  return accountCard() + `
+  <div class="card">
+    <h2>Backup</h2>
+    <div class="muted small" style="margin-bottom:10px">Your data lives on this phone. Copy a backup now and then and keep it somewhere safe, like a note to yourself on WhatsApp.</div>
+    <button class="btn" style="width:100%" data-act="backup">Copy backup</button>
+    <div style="height:12px"></div>
+    <label for="rs">Restore: paste a backup here</label>
+    <textarea id="rs" data-in="restoreText" placeholder="Paste your backup text">${esc(ui.restoreText || '')}</textarea>
+    <div style="height:8px"></div>
+    <button class="btn danger ${ui.armed==='restore'?'armed':''}" data-act="restore">${ui.armed==='restore' ? 'Confirm: replace current data' : 'Restore backup'}</button>
+  </div>
+  <div class="card">
+    <h2>Start over</h2>
+    <div class="muted small" style="margin-bottom:10px">Deletes every player, session, score and note from this device. This cannot be undone, so copy a backup first if you might want anything back.</div>
+    <button class="btn danger ${ui.armed==='reset'?'armed':''}" style="width:100%" data-act="resetall">${ui.armed==='reset' ? 'Tap again to delete everything' : 'Delete all players and logs'}</button>
+  </div>`;
+}
+function viewLog(){
+  if(!S.sessions.length) return `<div class="empty"><b>No sessions logged</b>Start a session in the Train tab and it will be saved here.</div>` + backupCard();
+  const list = S.sessions.slice().sort((a,b) => (b.date+b.id).localeCompare(a.date+a.id));
+  return list.map(s => {
+    const c = counts(s, false);
+    const open = !!ui.open[s.id];
+    const detail = open ? `
+      <div class="names"><span class="pill P">Present</span>${esc(listBy(s,'P',false).join(', ') || 'none')}</div>
+      <div class="names"><span class="pill L">Late</span>${esc(listBy(s,'L',false).join(', ') || 'none')}</div>
+      <div class="names"><span class="pill A">Absent</span>${esc(listBy(s,'A',false).join(', ') || 'none')}</div>
+      ${s.ratings && Object.keys(s.ratings).length ? `<div class="names"><b>Scores</b><br>${esc(Object.keys(s.ratings).map(id => nameOf(s, id) + ' ' + s.ratings[id]).join(', '))}</div>` : ''}
+      ${s.notes && s.notes.trim() ? `<div class="names"><b>Notes</b><br>${esc(s.notes).replace(/\n/g,'<br>')}</div>` : ''}
+      <div class="row wrap-r" style="margin-top:8px">
+        <button class="btn small" data-act="copy" data-id="${s.id}">Copy summary</button>
+        ${isHead() ? `<button class="btn small danger ${ui.armed==='ds'+s.id?'armed':''}" data-act="delsession" data-id="${s.id}">${ui.armed==='ds'+s.id ? 'Confirm delete' : 'Delete session'}</button>` : ''}
+      </div>` : '';
+    return `<div class="card">
+      <button class="sess-h" data-act="togglelog" data-id="${s.id}" aria-expanded="${open}">
+        <div class="grow"><b>${esc(sessLabel(s))}</b>${scoreText(s) ? ' <b>' + esc(scoreText(s)) + '</b>' : ''}${s.id===S.currentId ? ' <span class="small muted">(in progress)</span>' : ''}<div class="small muted">${fmtDate(s.date)}</div></div>
+        <div><span class="pill P">${c.P}</span><span class="pill L">${c.L}</span><span class="pill A">${c.A}</span></div>
+      </button>${detail}</div>`;
+  }).join('') + backupCard();
+}
+
+function setApp(html){
+  const app = document.getElementById('app');
+  const a = document.activeElement, id = a && a.id, st = a && a.selectionStart;
+  app.innerHTML = html + (ui.toast ? `<div class="toast" role="status">${esc(ui.toast)}</div>` : '');
+  if(id){ const el = document.getElementById(id); if(el){ el.focus(); try{ if(st != null) el.setSelectionRange(st, st); }catch(e){} } }
+}
+function render(){
+  if(mode === 'loading'){ setApp('<div class="empty" style="padding-top:20vh"><b>Elixir FC</b>Loading...</div>'); return; }
+  if(mode === 'login'){ setApp(loginHTML()); return; }
+  if(mode === 'player'){ setApp(playerHTML()); return; }
+  const app = document.getElementById('app');
+  const active = document.activeElement;
+  const keepId = active && active.id, selStart = active && active.selectionStart;
+  const scrollY = window.scrollY;
+  const title = ui.profile ? 'Player' : {home:'Home', train:'Session', squad:'Squad', log:'Session log'}[ui.tab];
+  app.innerHTML = `
+    <div class="badge" id="syncbadge">${syncText()}</div>
+    ${ui.tab === 'home' && !ui.profile ? '' : `<header><h1>Elixir FC</h1><span class="sub">${title}</span></header>`}
+    ${ui.storageOk ? '' : '<div class="banner">This device is not saving your data. Use Copy backup in the Log tab before you close the page.</div>'}
+    ${ui.tab === 'home' ? viewHome() : ui.tab === 'train' ? viewTrain() : ui.tab === 'squad' ? (ui.profile ? viewProfile() : viewSquad()) : viewLog()}
+    ${ui.fallbackText ? `<div class="card"><h2>Copy this text</h2><textarea readonly onfocus="this.select()">${esc(ui.fallbackText)}</textarea><div style="height:8px"></div><button class="btn small" data-act="closefallback">Done</button></div>` : ''}
+    <nav><div class="in">
+      <button class="${ui.tab==='home'?'on':''}" data-act="tab" data-v="home">Home</button>
+      <button class="${ui.tab==='train'?'on':''}" data-act="tab" data-v="train">Session</button>
+      <button class="${ui.tab==='squad'?'on':''}" data-act="tab" data-v="squad">Squad</button>
+      <button class="${ui.tab==='log'?'on':''}" data-act="tab" data-v="log">Log${S.sessions.length ? ' (' + S.sessions.length + ')' : ''}</button>
+    </div></nav>
+    ${ui.toast ? `<div class="toast" role="status">${esc(ui.toast)}</div>` : ''}`;
+  if(keepId){
+    const el = document.getElementById(keepId);
+    if(el){ el.focus(); try{ if(selStart != null) el.setSelectionRange(selStart, selStart); }catch(e){} }
+  }
+  window.scrollTo(0, scrollY);
+  paintTimer();
+}
+
+
+/* ---------- cloud: login, sign-in, player portal ---------- */
+function newCode(){
+  const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  for(let tries = 0; tries < 20; tries++){
+    const b = new Uint8Array(10); crypto.getRandomValues(b);
+    const c = Array.from(b, x => A[x % A.length]).join('');
+    if(!S.players.some(p => p.code === c)) return c;
+  }
+  return Math.random().toString(36).slice(2, 12).toUpperCase();
+}
+const fmtCode = c => String(c || '').replace(/(.{5})(.+)/, '$1-$2');
+const normCode = c => String(c || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+
+function loginHTML(){
+  return `<div class="login">
+    <div class="brand">Elixir FC</div>
+    <div class="tag">Training and match log</div>
+    ${sb ? '' : '<div class="banner">The cloud library did not load. Open this page from its web address with an internet connection.</div>'}
+    <div class="card">
+      <h2>Coach sign in</h2>
+      <label for="em">Email</label>
+      <input type="email" id="em" data-in="email" value="${esc(ui.email)}" autocomplete="username" inputmode="email">
+      <div style="height:10px"></div>
+      <label for="pw">Password</label>
+      <input type="password" id="pw" data-in="password" value="${esc(ui.password)}" autocomplete="current-password">
+      <div style="height:12px"></div>
+      <button class="btn primary" style="width:100%" data-act="coachSignIn" ${ui.busy ? 'disabled' : ''}>${ui.busy ? 'Signing in...' : 'Sign in'}</button>
+    </div>
+    <div class="card">
+      <h2>I am a player</h2>
+      <label for="pc">Your private code from the coach</label>
+      <input type="text" id="pc" data-in="code" value="${esc(ui.code)}" autocomplete="off" autocapitalize="characters" style="text-transform:uppercase;letter-spacing:1px">
+      <div style="height:12px"></div>
+      <button class="btn" style="width:100%" data-act="playerEnter" ${ui.busy ? 'disabled' : ''}>View my page</button>
+    </div>
+  </div>`;
+}
+async function coachSignIn(){
+  if(!sb || ui.busy) return;
+  if(!ui.email.trim() || !ui.password){ toast('Enter your email and password'); return; }
+  ui.busy = true; render();
+  try{
+    const { data, error } = await sb.auth.signInWithPassword({email: ui.email.trim(), password: ui.password});
+    if(error || !data || !data.user){
+      ui.busy = false;
+      const m = String((error && error.message) || '').toLowerCase();
+      let msg = 'Could not sign in: ' + ((error && error.message) || 'unknown problem');
+      if(m.includes('invalid login')) msg = 'Wrong email or password, or this account was not created in Supabase yet';
+      else if(m.includes('not confirmed')) msg = 'This account is not confirmed. In Supabase open Authentication, Users, and confirm it';
+      else if(m.includes('fetch') || m.includes('network') || m.includes('failed')) msg = 'Cannot reach the server. Open the app from its web address, not inside Claude';
+      else if(m.includes('api key') || m.includes('apikey')) msg = 'The Supabase key in the app is not accepted';
+      toast(msg); return;
+    }
+    user = data.user; ui.password = ''; ui.busy = false;
+    await enterCoach();
+  }catch(e){ ui.busy = false; toast('Could not connect. Check your internet.'); }
+}
+async function enterCoach(){
+  mode = 'loading'; render();
+  KEY = 'elixir-fc-cloud-v1:' + user.id;
+  let local = null, cloud = null, failed = false;
+  try{ const v = await kvGet(); if(v){ const d = JSON.parse(v); if(d && d.players && d.sessions) local = d; } }catch(e){}
+  clubId = user.id; cloudExists = false; lastSeen = null;
+  try{
+    const { data, error } = await sb.from('club_data').select('owner_id,data,updated_at');
+    if(error) failed = true;
+    else if(data && data.length){
+      const row = data.find(r => r.owner_id !== user.id) || data[0];
+      clubId = row.owner_id; cloudExists = true; lastSeen = row.updated_at;
+      if(row.data && row.data.players) cloud = row.data;
+    }
+  }catch(e){ failed = true; }
+  if(cloud) S = cloud; else if(local) S = local;
+  knownIds = new Set(); if(cloud) noteKnown(cloud.sessions);
+  normalizeS();
+  ui.tab = 'home'; ui.profile = null;
+  mode = 'coach';
+  ui.sync = failed ? 'offline' : 'saved';
+  if(!failed && !cloudExists && clubId === user.id && (S.players.length || S.sessions.length)) cloudSave();
+  startTicker(); render();
+}
+async function signOut(){
+  try{ if(S.timer && S.timer.running) holdScreen(false); }catch(e){}
+  try{ await sb.auth.signOut(); }catch(e){}
+  try{ localStorage.removeItem(KEY); }catch(e){}
+  S = {players:[], sessions:[], currentId:null, blocks:clone(DEFAULT_BLOCKS), matchBlocks:clone(DEFAULT_MATCH_BLOCKS), timer:null};
+  user = null; clubId = null; cloudExists = false; lastSeen = null; knownIds = new Set(); mode = 'login'; ui.email = ''; ui.password = ''; ui.tab = 'home'; ui.profile = null;
+  render();
+}
+async function playerEnter(){
+  const c = normCode(ui.code);
+  if(c.length < 6){ toast('Type the code your coach gave you'); return; }
+  await enterPlayer(c, true);
+}
+async function enterPlayer(code, fromLogin){
+  if(!sb || !code) { mode = 'login'; render(); return; }
+  ui.busy = true;
+  try{
+    const { data, error } = await sb.rpc('get_player_view', {p_code: normCode(code)});
+    ui.busy = false;
+    if(error){ if(fromLogin){ mode = 'login'; toast('Could not connect. Check your internet.'); } else { mode = 'login'; render(); } return; }
+    if(!data){ try{ localStorage.removeItem(PCODE_KEY); }catch(e){} mode = 'login'; toast('That code did not work'); return; }
+    pdata = data; mode = 'player';
+    try{ localStorage.setItem(PCODE_KEY, normCode(code)); }catch(e){}
+    ui.code = ''; render();
+  }catch(e){ ui.busy = false; mode = 'login'; toast('Could not connect. Check your internet.'); }
+}
+function playerLogout(){ try{ localStorage.removeItem(PCODE_KEY); }catch(e){} pdata = null; mode = 'login'; render(); }
+
+function playerHTML(){
+  const pl = pdata.player || {};
+  const all = (pdata.sessions || []);
+  const training = all.filter(s => s.type !== 'match' && s.mark);
+  const matches = all.filter(s => s.type === 'match');
+  let att = 0; training.forEach(s => { if(s.mark === 'P') att += 1; else if(s.mark === 'L') att += 0.5; });
+  const pct = training.length ? Math.round(att/training.length*100) : null;
+  const played = matches.filter(s => s.mark === 'P' || s.mark === 'L').length;
+  const rated = all.filter(s => s.rating).slice(0,5);
+  const avg = rated.length ? rated.reduce((a,x) => a + Number(x.rating), 0)/rated.length : null;
+  const cls = r => r >= 8 ? 'hi' : r >= 5 ? 'mid' : 'lo';
+  const bits = [];
+  if(pl.pos) bits.push(pl.pos); if(pl.age) bits.push('age ' + pl.age); if(pl.num) bits.push('#' + pl.num); if(pl.foot) bits.push(pl.foot + ' foot'); if(pl.note) bits.push(pl.note);
+  const res = matches.slice(0,5).map(m => {
+    const has = m.gf !== '' && m.ga !== '' && m.gf != null && m.ga != null;
+    const r = has ? (Number(m.gf) > Number(m.ga) ? 'W' : Number(m.gf) === Number(m.ga) ? 'D' : 'L') : '';
+    return `<div class="hrow" style="cursor:default"><span class="grow"><b>vs ${esc(m.opp || 'opponent')}</b><div class="small muted">${fmtDate(m.date)}</div></span><b>${has ? esc(m.gf + '-' + m.ga) : '-'}</b>${r ? `<span class="chip ${r==='W'?'hi':r==='D'?'mid':'lo'}" style="min-width:34px;padding:3px 8px">${r}</span>` : ''}</div>`;
+  }).join('');
+  return `
+  <header><h1>Elixir FC</h1><span class="sub">My page</span></header>
+  <div class="card"><div class="row" style="gap:14px">${avatar(pl, 80)}<div><div style="font-size:22px;font-weight:800">${esc(pl.name)}</div><div class="small muted">${esc(bits.join(', '))}</div></div></div></div>
+  <div class="card"><h2>My form</h2>
+    ${rated.length ? `<div class="stats" style="margin-bottom:6px"><div><div class="big">${avg.toFixed(1)}</div><div class="small muted">average, last ${rated.length}</div></div><div><div class="big">${rated.length}</div><div class="small muted">scores</div></div><div><div class="big">${played}</div><div class="small muted">matches played</div></div></div>
+    <div class="chips">${rated.slice().reverse().map(x => `<div class="chip ${cls(Number(x.rating))}">${esc(x.rating)}<small>${x.type === 'match' ? 'Match' : 'Training'} ${shortDate(x.date)}</small></div>`).join('')}</div>
+    <div class="small muted" style="margin-top:6px">Oldest on the left, latest on the right.</div>`
+    : '<div class="empty" style="padding:10px"><b>No scores yet</b>Your coach adds scores after training and matches.</div>'}
+  </div>
+  <div class="card"><h2>My training attendance</h2>
+    ${training.length ? `<div class="stats" style="margin-bottom:6px"><div><div class="big">${pct}%</div><div class="small muted">attendance</div></div><div><div class="big">${+att.toFixed(1)}/${training.length}</div><div class="small muted">sessions</div></div><div></div></div>
+    <div class="chips">${training.slice(0,5).reverse().map(s => `<div class="chip ${s.mark}">${{P:'Present',L:'Late',A:'Absent'}[s.mark]}<small>${shortDate(s.date)}</small></div>`).join('')}</div>
+    <div class="small muted" style="margin-top:6px">Present counts as 1, late as half, absent as 0.</div>`
+    : '<div class="empty" style="padding:10px"><b>No training marked yet</b>It will show here after your first session.</div>'}
+  </div>
+  ${res ? `<div class="card"><h2>Team results</h2>${res}</div>` : ''}
+  <div class="row" style="gap:8px"><button class="btn grow" data-act="refreshPlayer">Refresh</button><button class="btn grow danger" data-act="plogout">Log out</button></div>`;
+}
+
+function startTicker(){ if(!tickStarted){ tickStarted = true; setInterval(tick, 250); setInterval(pollCloud, 8000); } }
+
+(async function init(){
+  if(!sb){ mode = 'login'; render(); return; }
+  try{
+    const { data } = await sb.auth.getSession();
+    if(data && data.session && data.session.user){ user = data.session.user; await enterCoach(); return; }
+  }catch(e){}
+  let saved = null; try{ saved = localStorage.getItem(PCODE_KEY); }catch(e){}
+  if(saved){ await enterPlayer(saved, false); return; }
+  mode = 'login'; render();
+})();
+</script>
+</body>
+</html>
