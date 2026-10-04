@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Elixir FC - Club Management</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --bg: #0f1016;
+            --surface: #1a1b26;
+            --surface-card: #222436;
+            --primary: #7c3aed;
+            --primary-hover: #6d28d9;
+            --accent: #f59e0b;
+            --text: #f3f4f6;
+            --text-muted: #9ca3af;
+            --border: #2e3047;
+            --danger: #ef4444;
+            --success: #10b981;
+            --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font); -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg); color: var(--text); padding-bottom: env(safe-area-inset-bottom); min-height: 100vh; display: flex; flex-direction: column; }
+
+        header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .logo { font-weight: 800; font-size: 1.2rem; color: var(--accent); display: flex; align-items: center; gap: 8px; }
+        .sync-badge { font-size: 0.75rem; padding: 4px 8px; border-radius: 12px; background: var(--surface-card); border: 1px solid var(--border); }
+        .sync-badge.saved { color: var(--success); border-color: var(--success); }
+        .sync-badge.saving { color: var(--accent); border-color: var(--accent); }
+
+        main { flex: 1; padding: 16px; max-width: 600px; width: 100%; margin: 0 auto; padding-bottom: 80px; }
+
+        .card { background: var(--surface-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+        h2 { font-size: 1.1rem; margin-bottom: 12px; color: var(--text); display: flex; justify-content: space-between; align-items: center; }
+        
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-size: 0.9rem;
+        }
+        button:active { transform: scale(0.98); }
+        button:hover { background: var(--primary-hover); }
+        button.secondary { background: transparent; border: 1px solid var(--border); color: var(--text); }
+        button.danger { background: var(--danger); }
+        button.success { background: var(--success); }
+
+        input, select, textarea {
+            width: 100%;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            margin-bottom: 12px;
+        }
+        input:focus, select:focus { outline: 1px solid var(--primary); border-color: var(--primary); }
+
+        .nav-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0; right: 0;
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
+            z-index: 100;
+        }
+        .nav-item {
+            background: none; border: none; color: var(--text-muted);
+            font-size: 0.75rem; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer;
+        }
+        .nav-item.active { color: var(--accent); }
+        .nav-item svg { width: 22px; height: 22px; }
+
+        .list-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 0; border-bottom: 1px solid var(--border);
+        }
+        .list-item:last-child { border-bottom: none; }
+        
+        .code-pill {
+            background: var(--surface);
+            border: 1px dashed var(--accent);
+            color: var(--accent);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+        }
+
+        .hidden { display: none !important; }
+        .flex-row { display: flex; gap: 8px; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">⚡ Elixir FC</div>
+        <div id="syncStatus" class="sync-badge saved">Synced</div>
+    </header>
+
+    <main id="app">
+        <!-- Dynamic Content Renders Here -->
+    </main>
+
+    <nav class="nav-bar" id="bottomNav">
+        <button class="nav-item active" onclick="switchTab('home')">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+            Home
+        </button>
+        <button class="nav-item" onclick="switchTab('squad')">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+            Squad
+        </button>
+        <button class="nav-item" onclick="switchTab('train')">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            Train
+        </button>
+        <button class="nav-item" onclick="switchTab('callups')">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+            Call-ups
+        </button>
+        <button class="nav-item" onclick="switchTab('portal')">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+            Portal
+        </button>
+    </nav>
+
+    <script>
+        // Application State
+        let state = {
+            currentTab: 'home',
+            role: 'coach', // coach or player
+            activePlayer: null,
+            players: JSON.parse(localStorage.getItem('elixir_players')) || [
+                { id: '1', name: 'Marcus Rashford', number: 10, position: 'FW', code: 'ELIX-1010', attendance: 100 },
+                { id: '2', name: 'Bukayo Saka', number: 7, position: 'MF', code: 'ELIX-7777', attendance: 90 }
+            ],
+            callups: JSON.parse(localStorage.getItem('elixir_callups')) || [],
+            sessions: JSON.parse(localStorage.getItem('elixir_sessions')) || []
+        };
+
+        function saveState() {
+            localStorage.setItem('elixir_players', JSON.stringify(state.players));
+            localStorage.setItem('elixir_callups', JSON.stringify(state.callups));
+            localStorage.setItem('elixir_sessions', JSON.stringify(state.sessions));
+            render();
+        }
+
+        function switchTab(tab) {
+            state.currentTab = tab;
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            event?.currentTarget?.classList.add('active');
+            render();
+        }
+
+        function render() {
+            const app = document.getElementById('app');
+            app.innerHTML = '';
+
+            if (state.currentTab === 'home') {
+                app.innerHTML = `
+                    <div class="card">
+                        <h2>Elixir FC Dashboard</h2>
+                        <p style="color: var(--text-muted); margin-bottom: 12px;">Welcome back, Coach. Manage your squad, track training attendance, and coordinate match call-ups effortlessly.</p>
+                        <div class="flex-row">
+                            <button onclick="switchTab('train')">Start Training</button>
+                            <button class="secondary" onclick="switchTab('squad')">View Squad (${state.players.length})</button>
+                        </div>
+                    </div>
+                `;
+            } else if (state.currentTab === 'squad') {
+                let html = `
+                    <div class="card">
+                        <h2>Squad Roster <button onclick="addPlayer()">+ Add Player</button></h2>
+                        <div id="playerList">
+                `;
+                state.players.forEach(p => {
+                    html += `
+                        <div class="list-item">
+                            <div>
+                                <strong>#${p.number} ${p.name}</strong>
+                                <div style="font-size: 0.8rem; color: var(--text-muted);">Pos: ${p.position}</div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span class="code-pill" title="Security Code">${p.code}</span>
+                                <button class="secondary" style="padding: 4px 8px; font-size: 0.75rem;" onclick="removePlayer('${p.id}')">✕</button>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += `</div></div>`;
+                app.innerHTML = html;
+            } else if (state.currentTab === 'train') {
+                app.innerHTML = `
+                    <div class="card">
+                        <h2>Live Session Timer</h2>
+                        <p style="font-size: 2rem; font-weight: bold; text-align: center; margin: 20px 0; color: var(--accent);">45:00</p>
+                        <div class="flex-row">
+                            <button onclick="alert('Session Started!')">Start Drill</button>
+                            <button class="secondary" onclick="alert('Session Paused')">Pause</button>
+                        </div>
+                    </div>
+                `;
+            } else if (state.currentTab === 'callups') {
+                app.innerHTML = `
+                    <div class="card">
+                        <h2>Tournament Call-ups <button onclick="createCallup()">+ New Call-up</button></h2>
+                        <div style="margin-top: 10px;">
+                            ${state.callups.length === 0 ? '<p style="color: var(--text-muted); font-size: 0.9rem;">No active call-ups created yet.</p>' : ''}
+                            ${state.callups.map(c => `<div><strong>${c.title}</strong> -${c.date}</div>`).join('')}
+                        </div>
+                    </div>
+                `;
+            } else if (state.currentTab === 'portal') {
+                if (!state.activePlayer) {
+                    app.innerHTML = `
+                        <div class="card">
+                            <h2>Player Security Portal</h2>
+                            <p style="color: var(--text-muted); margin-bottom: 12px; font-size: 0.9rem;">Enter your unique security code provided by your coach to access your profile and call-ups.</p>
+                            <input type="text" id="playerCodeInput" placeholder="e.g. ELIX-1010" style="text-transform: uppercase;">
+                            <button onclick="playerLogin()" style="width: 100%;">Login as Player</button>
+                        </div>
+                    `;
+                } else {
+                    let p = state.activePlayer;
+                    app.innerHTML = `
+                        <div class="card">
+                            <h2>Player Dashboard</h2>
+                            <p>Welcome, <strong>${p.name}</strong> (#${p.number})</p>
+                            <p style="margin-top: 8px; color: var(--text-muted); font-size: 0.9rem;">Position: ${p.position}</p>
+                            <button class="secondary" style="margin-top: 16px;" onclick="playerLogout()">Log Out</button>
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        function addPlayer() {
+            const name = prompt("Enter player full name:");
+            if (!name) return;
+            const number = prompt("Enter jersey number:", "12");
+            const position = prompt("Enter position (FW, MF, DF, GK):", "MF");
+            const randomCode = 'ELIX-' + Math.floor(1000 + Math.random() * 9000);
+            
+            state.players.push({
+                id: Date.now().toString(),
+                name,
+                number: parseInt(number) || 0,
+                position: position.toUpperCase(),
+                code: randomCode,
+                attendance: 100
+            });
+            saveState();
+        }
+
+        function removePlayer(id) {
+            if (confirm("Are you sure you want to remove this player?")) {
+                state.players = state.players.filter(p => p.id !== id);
+                saveState();
+            }
+        }
+
+        function createCallup() {
+            const title = prompt("Enter Match/Tournament title:");
+            if (!title) return;
+            const date = prompt("Enter date (e.g., Saturday 3 PM):", "Next Saturday");
+            state.callups.push({ id: Date.now().toString(), title, date });
+            saveState();
+        }
+
+        // FIXED Player login matching with case and spacing normalization
+        function playerLogin() {
+            const inputVal = document.getElementById('playerCodeInput').value.trim().toUpperCase();
+            const foundPlayer = state.players.find(p => p.code.trim().toUpperCase() === inputVal);
+            
+            if (foundPlayer) {
+                state.activePlayer = foundPlayer;
+                render();
+            } else {
+                alert("Invalid security code. Please check with your coach.");
+            }
+        }
+
+        function playerLogout() {
+            state.activePlayer = null;
+            render();
+        }
+
+        // Initial render
+        render();
+    </script>
+</body>
+</html>
